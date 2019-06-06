@@ -2,7 +2,9 @@
 title: "Predicting the manner in which a sample of 6 people did exercise."
 author: "Franklin M."
 date: "06/06/2019"
-output: html_document
+output:
+  
+  html_document: default
 ---
 ## Introduction
 
@@ -37,14 +39,18 @@ set.seed(2018)
 ```
 
 ## Prediction Methods
-The dependent variable ("classe") is a factor variable with 5 levels. So, I employ 4 prediction models as detailed below:
-\begin{itemize}
-\item {\bf Random Forests}: This fits a tree on a bootstrapped sample from the training set and generates a tree for each subsample. So I do not need to generate a cross-validation dataset and this is assumed to be done from the boostrapped samples.
-\item {\bf Linear Discriminant Analysis}: For this case, I used a 20-folds cross-validation datasets. This is done by choosing the "method = "cv", number = 20)" option as shown below.(Note the cross-validation is done on the training set.) 
-\item {\bf Gradient Boosting Model}: This methods combines different types of prediction models and weighs them according to their importance. 
-\item {\bf Stacked Model}: I stacked predictions from the three models above.
-\end{itemize}
-After fitting the models on the train datasets, I predict using the testing set which I create. (I re-emphasize that the test set "TestRF" which I use is the one I created from the training data and {\bf NOT} the testing data that was provided for this exercise).
+The dependent variable ("classe") is a factor variable with 5 levels. So, I employ 4 prediction models as detailed below:<br />
+<br /> 
+
+1) Random Forests: This fits a tree on a bootstrapped sample from the training set and generates a tree for each subsample. So I do not need to generate a cross-validation dataset and this is assumed to be done from the boostrapped samples. <br />
+<br /> 
+2) Linear Discriminant Analysis: For this case, I used a 20-folds cross-validation datasets. This is done by choosing the "method = "cv", number = 20)" option as shown below.(Note the cross-validation is done on the training set.) <br />
+<br /> 
+3) Gradient Boosting Model: This methods combines different types of prediction models and weighs them according to their importance. <br />
+<br />  
+4) Stacked Model: I stacked predictions from the three models above.<br />
+<br /> 
+After fitting the models on the train datasets, I predict using the testing set which I create. (I re-emphasize that the test set "TestRF" which I use is the one I created from the training data and NOT the testing data that was provided for this exercise).
 
 ```{r, cache=T}
 #Random Forests
