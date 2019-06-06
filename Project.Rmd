@@ -1,0 +1,91 @@
+---
+title: "Predicting the manner in which a sample of 6 people did exercise."
+author: "Franklin M."
+date: "06/06/2019"
+output: html_document
+---
+## Introduction
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+In this task, we predict how well people excercised using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.<br />
+<br /> 
+I proceed by loading the training and test data provided for this assignment and the required R packages for this project. The training data consists of 19622 observations and 160 variables as shown below. 
+```{r}
+library(caret)
+library(ggplot2)
+library(lattice)
+training=read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+testing=read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+```
+## Data Preparation
+We are interested in predicting the variable "classe" using information from accelerometers on the belt, forearm, arm, and dumbell. So, I subset the dataset choosing variables of interests shown below. I then split the training data into a training and test set. The test set will be used to test for the prediction accuracy of the set of models I explore in this exercise. (Note: that the test dataset provided will be used for "Prediction Quiz" part of the course).
+```{r}
+selecting=c("classe", "accel_belt_x", 
+            "accel_belt_y", "accel_belt_z", 
+            "accel_arm_x", "accel_arm_y", 
+            "accel_arm_z", "accel_dumbbell_x", 
+            "accel_dumbbell_y", "accel_dumbbell_z", 
+            "accel_forearm_x", "accel_forearm_y", 
+            "accel_forearm_z" )
+training2=subset(training, select=selecting)
+inTrain = createDataPartition(training2$classe, p = 4/5)[[1]]
+TrainRF=training2[inTrain,]
+TestRF=training2[-inTrain,]
+set.seed(2018)
+```
+
+## Prediction Methods
+The dependent variable ("classe") is a factor variable with 5 levels. So, I employ 4 prediction models as detailed below:
+\begin{itemize}
+\item {\bf Random Forests}: This fits a tree on a bootstrapped sample from the training set and generates a tree for each subsample. So I do not need to generate a cross-validation dataset and this is assumed to be done from the boostrapped samples.
+\item {\bf Linear Discriminant Analysis}: For this case, I used a 20-folds cross-validation datasets. This is done by choosing the "method = "cv", number = 20)" option as shown below.(Note the cross-validation is done on the training set.) 
+\item {\bf Gradient Boosting Model}: This methods combines different types of prediction models and weighs them according to their importance. 
+\item {\bf Stacked Model}: I stacked predictions from the three models above.
+\end{itemize}
+After fitting the models on the train datasets, I predict using the testing set which I create. (I re-emphasize that the test set "TestRF" which I use is the one I created from the training data and {\bf NOT} the testing data that was provided for this exercise).
+
+```{r, cache=T}
+#Random Forests
+model1=train(classe ~., data=TrainRF, method="rf")
+pred1=predict(model1, TestRF)
+
+#Linear Discriminant Analysis
+model2 = train(classe ~ ., data=TrainRF, method="lda",
+               trControl = trainControl(method = "cv", number = 20))
+pred2=predict(model2, TestRF)
+
+
+#Boosting-Please verify what is boosting
+model3=train(classe ~., TrainRF, method="gbm", verbose=FALSE)
+pred3=predict(model3, TestRF)
+compare3=confusionMatrix(pred3, TestRF$classe)
+
+#Combining All Model
+combineData=data.frame(pred1, pred2, pred3, classe=TestRF$classe)
+model4=train(classe ~., data=combineData, method="rf")
+pred4=predict(model4, TestRF)
+compare4=confusionMatrix(pred4, TestRF$classe)
+```
+## Comparing the Prediction Accuracies between the Models
+We now compare the prediction accuracy across our class of models. Clearly, we see that the random forest model out-performed our other models with an accuracy of 0.944. expected out of sample error is 5.58% (i.e. 1-0.944).
+```{r}
+compare=confusionMatrix(pred1, TestRF$classe)
+#Accuracy of Random Forest
+c(compare$overall[1], compare$overall[2], c(compare$overall[3], compare$overall[4]))
+
+
+compare2=confusionMatrix(pred2, TestRF$classe)
+#Accuracy of Linear Discriminant Analysis
+c(compare2$overall[1], compare2$overall[2], c(compare2$overall[3], compare2$overall[4]))
+
+compare3=confusionMatrix(pred3, TestRF$classe)
+#Accuracy of GBM
+c(compare3$overall[1], compare3$overall[2], c(compare3$overall[3], compare3$overall[4]))
+
+compare4=confusionMatrix(pred4, TestRF$classe)
+#Accuracy of GBM
+c(compare4$overall[1], compare4$overall[2], c(compare4$overall[3], compare4$overall[4]))
+```
+We will apply this random forest model  to predict 20 different test cases.
